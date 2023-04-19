@@ -21,4 +21,5 @@ from pybo import views # pybo 디렉토리에 있는 views를 가져오기
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('pybo/', include('pybo.urls')), # views의 index를 만들기
+
 ]
