@@ -1,55 +1,51 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Question, Answer
+from django.utils import timezone
+from .forms import QuestionForm, AnswerForm
+from django.core.paginator import Paginator
 
 # Create your views here.
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Question
-from django.utils import timezone
-from .forms import QuestionForm
-
-
 def index(request):
-    """
-    pybo 목록 출력
-    """
+    page = request.GET.get("page", "1") # 페이지의 번호를 가져옴 (그런데 첫 페이지는 1의 기본값 설정)
     question_list = Question.objects.order_by('-create_date')
-    context = {'question_list': question_list}
+    paginator = Paginator(question_list, 10) # 페이지당 10개로 게시글을 제한
+    page_obj = paginator.get_page(page) # 전체 데이터에서 요청한 페이지에 관한 게시글만 추출
+    context = {'question_list': page_obj}
     return render(request, 'pybo/question_list.html', context)
-    # 'pybo/question_list.html' -> 'pvbo/경로에 해당하는 디렉토리 생성이 필요
-
+    # Templates 경로는 C:/projects/mysite/templates
+    # 'pybo/question_list.html' -> 'pybo/' 경로를 직접 생성이 필요
 
 def detail(request, question_id):
-    """
-    pybo 내용 출력
-    """
     # question = Question.objects.get(id=question_id)
     question = get_object_or_404(Question, pk=question_id)
     context = {'question': question}
     return render(request, 'pybo/question_detail.html', context)
 
-
 def answer_create(request, question_id):
-    """
-    pybo 답변 등록
-    """
     question = get_object_or_404(Question, pk=question_id)
-    # save()랑 동일한 기능
-    question.answer_set.create(content=request.POST.get('content'),
-                               create_date=timezone.now())  #
-    return redirect('pybo:detail', question_id=question.id)
 
+    if request.method == "POST":
+        form = AnswerForm(request.POST)
+        if form.is_valid():
+            answer = form.save(commit=False)
+            answer.create_date = timezone.now()
+            answer.question = question
+            answer.save()
+            return redirect("pybo:detail", question_id = question.id)
+    else:
+        form = AnswerForm()
+    context = {'question': question, 'form': form}
+    return render(request, 'pybo/question_detail.html', context)
 
 def question_create(request):
-    '''
-    pybo 질문등록
-    '''
-    if request.method == "POST":
+    if request.method =="POST": # Post 요청일때는 입력한 값들을 전달받아 DB에 저장
         form = QuestionForm(request.POST)
         if form.is_valid():
             question = form.save(commit=False)
             question.create_date = timezone.now()
             question.save()
-            return redirect('pybo:index')
-    else:
+            return redirect("pybo:index")
+    else: # Get 요청일때는 단순히 질문등록 페이지 요청
         form = QuestionForm()
     context = {'form': form}
     return render(request, 'pybo/question_form.html', context)
