@@ -27,6 +27,7 @@
       <list>
         <option value="$MODULE_DIR$/mysite/templates" />
         <option value="$MODULE_DIR$/mysite/templates/pybo" />
+        <option value="$MODULE_DIR$/mysite/templates/common" />
       </list>
     </option>
   </component>
